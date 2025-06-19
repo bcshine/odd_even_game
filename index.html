@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔢 홀짝 게임</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(255,255,255,0.05) 0%, transparent 50%);
+            animation: backgroundFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes backgroundFloat {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .game-container {
+            width: 360px;
+            height: 640px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 25px;
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.25),
+                0 10px 25px rgba(0,0,0,0.15),
+                inset 0 1px 0 rgba(255,255,255,0.6);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .game-screen {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 25px 25px 30px;
+            text-align: center;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .game-screen.active {
+            display: flex;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 900;
+            color: #333;
+            margin-bottom: 40px;
+        }
+
+        .main-title {
+            font-size: 32px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            font-size: 20px;
+            font-weight: 600;
+            color: #353131;
+            margin-bottom: 0;
+            opacity: 0.8;
+        }
+
+        .game-description {
+            font-size: 24px;
+            color: #232121;
+            margin-bottom: 0;
+            line-height: 1.2;
+            opacity: 0.7;
+        }
+
+        .header-section {
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .question-section {
+            text-align: center;
+        }
+
+        .gift-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        .gift-box {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            border-radius: 25px;
+            position: relative;
+            margin: 0;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 15px 30px rgba(102, 126, 234, 0.3),
+                0 8px 16px rgba(0,0,0,0.1),
+                inset 0 2px 0 rgba(255,255,255,0.3);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .gift-box::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .gift-box:hover {
+            transform: scale(1.08) translateY(-8px);
+            box-shadow: 
+                0 30px 60px rgba(102, 126, 234, 0.4),
+                0 15px 30px rgba(0,0,0,0.15),
+                inset 0 2px 0 rgba(255,255,255,0.4);
+        }
+
+        .gift-box::before {
+            content: "?";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            color: #ffffff;
+            font-weight: 900; 
+            text-shadow: 
+                0 4px 8px rgba(0,0,0,0.3),
+                0 2px 4px rgba(0,0,0,0.2);
+            z-index: 2;
+            animation: questionFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes questionFloat {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .gift-box.opening {
+            animation: dramaticOpen 3s ease-in-out;
+        }
+
+        .gift-box.pulsing {
+            animation: tensePulse 1s ease-in-out infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        @keyframes dramaticOpen {
+            0% { transform: scale(1); box-shadow: 0 10px 30px rgba(255,107,107,0.3); }
+            20% { transform: scale(1.1) rotate(5deg); box-shadow: 0 15px 40px rgba(255,107,107,0.5); }
+            40% { transform: scale(0.95) rotate(-3deg); box-shadow: 0 20px 50px rgba(255,107,107,0.7); }
+            60% { transform: scale(1.15) rotate(2deg); box-shadow: 0 25px 60px rgba(255,107,107,0.8); }
+            80% { transform: scale(0.9) rotate(-1deg); box-shadow: 0 30px 70px rgba(255,107,107,0.9); }
+            100% { transform: scale(1.2); box-shadow: 0 35px 80px rgba(255,107,107,1); }
+        }
+
+        @keyframes tensePulse {
+            0% { 
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(255,107,107,0.3), 0 0 0 0 rgba(255,107,107,0.7);
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 0 15px 40px rgba(255,107,107,0.5), 0 0 0 10px rgba(255,107,107,0.3);
+            }
+            100% { 
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(255,107,107,0.3), 0 0 0 20px rgba(255,107,107,0);
+            }
+        }
+
+        .choice-buttons {
+            display: flex;
+            gap: 20px;
+            margin: 0;
+            padding: 0 20px;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .choice-btn {
+            flex: 1;
+            padding: 18px 25px;
+            font-size: 22px;
+            font-weight: 700;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: white;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            min-height: 55px;
+        }
+
+        .choice-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .choice-btn:hover::before {
+            left: 100%;
+        }
+
+        .odd-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 50%, #ff9a9e 100%);
+            color: white;
+        }
+
+        .even-btn {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 50%, #a8edea 100%);
+            color: white;
+        }
+
+        .choice-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 
+                0 12px 30px rgba(0,0,0,0.2),
+                0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .choice-btn:active {
+            transform: translateY(-1px) scale(0.98);
+            transition: all 0.1s ease;
+        }
+
+        @media (max-width: 400px) {
+            .choice-btn {
+                font-size: 16px;
+                padding: 16px 20px;
+                min-height: 50px;
+            }
+        }
+
+        .dice {
+            width: 150px;
+            height: 150px;
+            background: white;
+            border: 3px solid #333;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            font-weight: 900;
+            margin: 40px auto;
+            animation: rollDice 2s ease-in-out;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        @keyframes rollDice {
+            0% { transform: rotateX(0) rotateY(0) scale(0.8); }
+            25% { transform: rotateX(180deg) rotateY(90deg) scale(1.2); }
+            50% { transform: rotateX(360deg) rotateY(180deg) scale(0.9); }
+            75% { transform: rotateX(540deg) rotateY(270deg) scale(1.1); }
+            100% { transform: rotateX(720deg) rotateY(360deg) scale(1); }
+        }
+
+        .screen-shake {
+            animation: screenShake 0.5s ease-in-out;
+        }
+
+        @keyframes screenShake {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(-5px); }
+            20% { transform: translateX(5px); }
+            30% { transform: translateX(-3px); }
+            40% { transform: translateX(3px); }
+            50% { transform: translateX(-2px); }
+            60% { transform: translateX(2px); }
+            70% { transform: translateX(-1px); }
+            80% { transform: translateX(1px); }
+            90% { transform: translateX(-1px); }
+        }
+
+        .countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            font-weight: 900;
+            color: #ff6b6b;
+            text-shadow: 0 5px 10px rgba(0,0,0,0.3);
+            animation: countdownPulse 1s ease-in-out;
+            z-index: 1000;
+        }
+
+        @keyframes countdownPulse {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .dice-numbers {
+            font-size: 80px;
+            font-weight: 900;
+            color: #333;
+            animation: rapidNumber 0.1s linear infinite;
+        }
+
+        @keyframes rapidNumber {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(180deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+
+        .result-message {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 20px 0;
+        }
+
+        .success-message {
+            color: #27ae60;
+        }
+
+        .fail-message {
+            color: #e74c3c;
+        }
+
+        .coupon {
+            width: 280px;
+            height: 180px;
+            background: linear-gradient(45deg, #ffecd2, #fcb69f);
+            border-radius: 15px;
+            border: 2px dashed #ff6b6b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .coupon-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .coupon-amount {
+            font-size: 32px;
+            font-weight: 900;
+            color: #ff6b6b;
+            margin-bottom: 5px;
+        }
+
+        .coupon-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+            width: 100%;
+        }
+
+        .action-btn {
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .save-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .retry-btn {
+            background: linear-gradient(45deg, #ffecd2, #fcb69f);
+            color: #333;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .confetti {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff6b6b;
+            animation: confetti-fall 3s linear infinite;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .flying-image {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-image: url('ggg.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: flyAcross 2s linear;
+            pointer-events: none;
+        }
+
+        @keyframes flyAcross {
+            0% {
+                left: -100px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+            100% {
+                left: 100%;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 400px) {
+            .game-container {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 첫 번째 화면: 선물상자와 홀짝 선택 -->
+        <div class="game-screen active" id="selectScreen">
+            <div class="header-section">
+                <h1 class="main-title">🎯 홀짝 게임 🎯</h1>
+                <p class="subtitle">운명을 가르는 한 번의 선택</p>
+            </div>
+            
+            <div class="gift-section">
+                <div class="gift-box" id="giftBox"></div>
+                <div class="question-section">
+                    <p class="game-description">홀짝, 골라보세요</p>
+                </div>
+            </div>
+            
+            <div class="choice-buttons">
+                <button class="choice-btn odd-btn" onclick="selectChoice('odd')">
+                    <span>홀수</span>
+                </button>
+                <button class="choice-btn even-btn" onclick="selectChoice('even')">
+                    <span>짝수</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 카운트다운 화면 -->
+        <div class="game-screen" id="countdownScreen">
+            <h2 class="title">준비되셨나요?</h2>
+            <div class="gift-box pulsing" id="pulsingBox"></div>
+            <div class="countdown" id="countdownNumber"></div>
+            <p style="font-size: 20px; color: #ff6b6b; font-weight: 700; margin-top: 30px;">운명의 순간이 다가옵니다...</p>
+        </div>
+
+        <!-- 두 번째 화면: 주사위 결과 -->
+        <div class="game-screen" id="resultScreen">
+            <h2 class="title">결과 발표!</h2>
+            <div class="dice" id="dice"></div>
+            <div class="result-message" id="resultMessage"></div>
+        </div>
+
+        <!-- 성공 화면 -->
+        <div class="game-screen" id="successScreen">
+            <div class="confetti" id="confetti"></div>
+            <h2 class="title success-message">🎉 축하합니다!</h2>
+            <p style="font-size: 20px; color: #27ae60; margin-bottom: 20px;">미션 성공!</p>
+            
+            <div class="coupon" id="coupon">
+                <div class="coupon-title">🧾 축하 쿠폰</div>
+                <div class="coupon-amount">1,000원</div>
+                <div class="coupon-subtitle">할인 쿠폰</div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn save-btn" onclick="saveCoupon()">쿠폰 저장하기</button>
+                <button class="action-btn retry-btn" onclick="resetGame()">다시 하기</button>
+            </div>
+        </div>
+
+        <!-- 실패 화면 -->
+        <div class="game-screen" id="failScreen">
+            <h2 class="title fail-message">아깝습니다!</h2>
+            <p style="font-size: 24px; color: #e74c3c; margin-bottom: 40px;">꽝! 😢</p>
+            
+            <div class="action-buttons">
+                <button class="action-btn retry-btn" onclick="resetGame()">다시 하기</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="couponCanvas" class="hidden"></canvas>
+
+    <script>
+        let userChoice = '';
+        let diceNumber = 0;
+        let audio = null;
+
+        function selectChoice(choice) {
+            userChoice = choice;
+            
+            // 선택 버튼 비활성화
+            document.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+            });
+            
+            // 화면 흔들림 효과
+            document.querySelector('.game-container').classList.add('screen-shake');
+            
+            setTimeout(() => {
+                document.querySelector('.game-container').classList.remove('screen-shake');
+                startCountdown();
+            }, 500);
+        }
+
+        function startCountdown() {
+            // 카운트다운 화면으로 전환
+            document.getElementById('selectScreen').classList.remove('active');
+            document.getElementById('countdownScreen').classList.add('active');
+            
+            let count = 3;
+            const countdownElement = document.getElementById('countdownNumber');
+            
+            function showCountdown() {
+                if (count > 0) {
+                    countdownElement.textContent = count;
+                    countdownElement.style.animation = 'none';
+                    countdownElement.offsetHeight; // 리플로우 강제 실행
+                    countdownElement.style.animation = 'countdownPulse 1s ease-in-out';
+                    
+                    // 긴장감 효과음 (있다면)
+                    playTensionSound();
+                    
+                    count--;
+                    setTimeout(showCountdown, 1000);
+                } else {
+                    countdownElement.textContent = 'GO!';
+                    countdownElement.style.color = '#27ae60';
+                    countdownElement.style.animation = 'countdownPulse 0.5s ease-in-out';
+                    
+                    setTimeout(() => {
+                        showDiceResult();
+                    }, 800);
+                }
+            }
+            
+            showCountdown();
+        }
+
+        function playTensionSound() {
+            // 간단한 beep 사운드를 코드로 생성
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        function showDiceResult() {
+            // 화면 전환
+            document.getElementById('countdownScreen').classList.remove('active');
+            document.getElementById('resultScreen').classList.add('active');
+            
+            const diceElement = document.getElementById('dice');
+            
+            // 빠르게 숫자가 바뀌는 효과 (긴장감 조성)
+            let rapidCounter = 0;
+            const rapidInterval = setInterval(() => {
+                const randomNum = Math.floor(Math.random() * 6) + 1;
+                diceElement.textContent = randomNum;
+                diceElement.className = 'dice dice-numbers';
+                rapidCounter++;
+                
+                if (rapidCounter > 20) { // 2초간 빠르게 변화
+                    clearInterval(rapidInterval);
+                    showFinalResult();
+                }
+            }, 100);
+        }
+
+        function showFinalResult() {
+            // 최종 주사위 숫자 생성
+            diceNumber = Math.floor(Math.random() * 6) + 1;
+            
+            const diceElement = document.getElementById('dice');
+            diceElement.className = 'dice'; // 애니메이션 제거
+            diceElement.textContent = diceNumber;
+            
+            // 화면 흔들림 효과
+            document.querySelector('.game-container').classList.add('screen-shake');
+            
+            setTimeout(() => {
+                document.querySelector('.game-container').classList.remove('screen-shake');
+            }, 500);
+            
+            // 결과 판정
+            setTimeout(() => {
+                checkResult();
+            }, 1500);
+        }
+
+        function checkResult() {
+            const isOdd = diceNumber % 2 === 1;
+            const userIsCorrect = (userChoice === 'odd' && isOdd) || (userChoice === 'even' && !isOdd);
+            
+            const resultMessage = document.getElementById('resultMessage');
+            resultMessage.innerHTML = `주사위: ${diceNumber} (${isOdd ? '홀수' : '짝수'})<br>당신의 선택: ${userChoice === 'odd' ? '홀수' : '짝수'}`;
+            
+            setTimeout(() => {
+                if (userIsCorrect) {
+                    showSuccess();
+                } else {
+                    showFailure();
+                }
+            }, 2000);
+        }
+
+        function showSuccess() {
+            document.getElementById('resultScreen').classList.remove('active');
+            document.getElementById('successScreen').classList.add('active');
+            
+            // 축포 효과
+            createConfetti();
+            
+            // 성공 사운드 재생
+            playSound('suc_01.mp3', 4000);
+        }
+
+        function showFailure() {
+            document.getElementById('resultScreen').classList.remove('active');
+            document.getElementById('failScreen').classList.add('active');
+            
+            // 날아가는 이미지 효과
+            createFlyingImage();
+            
+            // 실패 사운드 재생
+            playSound('fail_02.mp3', 4000);
+        }
+
+        function createConfetti() {
+            const confettiContainer = document.getElementById('confetti');
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confettiPiece = document.createElement('div');
+                confettiPiece.classList.add('confetti-piece');
+                confettiPiece.style.left = Math.random() * 100 + '%';
+                confettiPiece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confettiPiece.style.animationDelay = Math.random() * 3 + 's';
+                confettiContainer.appendChild(confettiPiece);
+            }
+            
+            // 3초 후 축포 제거
+            setTimeout(() => {
+                confettiContainer.innerHTML = '';
+            }, 4000);
+        }
+
+        function createFlyingImage() {
+            const gameContainer = document.querySelector('.game-container');
+            const flyingImg = document.createElement('div');
+            flyingImg.classList.add('flying-image');
+            gameContainer.appendChild(flyingImg);
+            
+            // 2초 후 이미지 제거
+            setTimeout(() => {
+                flyingImg.remove();
+            }, 2000);
+        }
+
+        function playSound(filename, duration) {
+            if (audio) {
+                audio.pause();
+                audio = null;
+            }
+            
+            audio = new Audio(filename);
+            audio.play().catch(e => console.log('오디오 재생 실패:', e));
+            
+            setTimeout(() => {
+                if (audio) {
+                    audio.pause();
+                    audio = null;
+                }
+            }, duration);
+        }
+
+        function saveCoupon() {
+            const canvas = document.getElementById('couponCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 캔버스 크기 설정
+            canvas.width = 400;
+            canvas.height = 250;
+            
+            // 배경 그라디언트
+            const gradient = ctx.createLinearGradient(0, 0, 400, 250);
+            gradient.addColorStop(0, '#ffecd2');
+            gradient.addColorStop(1, '#fcb69f');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 400, 250);
+            
+            // 테두리
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 5]);
+            ctx.strokeRect(10, 10, 380, 230);
+            
+            // 텍스트
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 24px "Noto Sans KR"';
+            ctx.textAlign = 'center';
+            ctx.fillText('🧾 축하 쿠폰', 200, 60);
+            
+            ctx.fillStyle = '#ff6b6b';
+            ctx.font = 'bold 48px "Noto Sans KR"';
+            ctx.fillText('1,000원', 200, 130);
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '18px "Noto Sans KR"';
+            ctx.fillText('할인 쿠폰', 200, 160);
+            
+            ctx.fillStyle = '#999';
+            ctx.font = '14px "Noto Sans KR"';
+            ctx.fillText('홀짝 게임 성공 기념', 200, 200);
+            
+            // 이미지 다운로드
+            const link = document.createElement('a');
+            link.download = '할인쿠폰_1000원.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function resetGame() {
+            // 모든 화면 숨기기
+            document.querySelectorAll('.game-screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // 첫 화면 표시
+            document.getElementById('selectScreen').classList.add('active');
+            
+            // 선물상자 애니메이션 리셋
+            document.getElementById('giftBox').classList.remove('opening');
+            
+            // 버튼 상태 복원
+            document.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
+            
+            // 카운트다운 숫자 색상 리셋
+            const countdownElement = document.getElementById('countdownNumber');
+            if (countdownElement) {
+                countdownElement.style.color = '#ff6b6b';
+            }
+            
+            // 변수 초기화
+            userChoice = '';
+            diceNumber = 0;
+            
+            // 오디오 정지
+            if (audio) {
+                audio.pause();
+                audio = null;
+            }
+        }
+    </script>
+</body>
+</html> 
